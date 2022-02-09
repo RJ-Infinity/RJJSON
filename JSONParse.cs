@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
 /// <summary>
-/// <version>0.3</version>
+/// <version>0.4</version>
 /// Adds A new Type <c>JSONTypes</c> and its dirivitives
 /// <list type="bullet">
 ///     <item>
@@ -38,7 +39,7 @@ namespace RJJSON
     /// <summary>
     /// Class <c>JSON</c> A mostly static class which helps yopu minippulate <c>JSONTypes</c>
     /// </summary>
-    class JSON
+    public class JSON
     {
         /// <summary>
         /// Method <c>StringToObject</c> converts a <c>string</c> representation of JSON to an object representation namely <c>JSONTypes</c> the sort used in C# code the oposit method is <code>JSON.ObjectToString()</code>
@@ -100,7 +101,7 @@ namespace RJJSON
                     {
                         throw new FormatException("The JSON string is incorectly formated");
                     }
-                break;
+                //break;
                 case "{":
                     if (Json.Substring(Json.Length - 1, 1) == "}")
                     {
@@ -118,7 +119,7 @@ namespace RJJSON
                     {
                         throw new FormatException("The JSON string is incorectly formated");
                     }
-                break;
+                //break;
                 case "[":
                     if (Json.Substring(Json.Length - 1, 1) == "]")
                     {
@@ -136,7 +137,7 @@ namespace RJJSON
                     {
                         throw new FormatException("The JSON string is incorectly formated");
                     }
-                break;
+                //break;
             }
             return new JSONString("");//just so the compiler dosnt shout at me (this should probs be an exception)
         }
@@ -362,7 +363,7 @@ namespace RJJSON
                         break;
                         default:
                             throw new Exception("error Invalid Data To Be Formated");
-                        break;
+                        //break;
                     }
                 }
                 else if (JSONStr[ichar] == '\\') {
@@ -503,11 +504,11 @@ namespace RJJSON
     /// <summary>
     /// Class <c>JSONTypes</c> base type for all JSON types.
     /// </summary>
-    abstract class JSONTypes//all types must inhehrit of one class so that they can go togeter in a list or dict
+    public abstract class JSONTypes//all types must inhehrit of one class so that they can go togeter in a list or dict
     {
         /// <summary>
         /// field <c>Type</c>
-        /// <returns>The JSON type as a <code>JSON.Types</code> int the case of the parent <c>JSONTypes</c> returns <code>JSON.Types.NULL</code></returns>
+        /// <returns>The JSON type as a <code>JSON.Types</code> in the case of the parent <c>JSONTypes</c> returns <code>JSON.Types.NULL</code></returns>
         /// </summary>
         public abstract JSON.Types Type { get; }
         /// <summary>
@@ -528,8 +529,22 @@ namespace RJJSON
         {
             return JSON.ObjectToString(this);
         }
+        public virtual JSONTypes this[object index] {
+            get
+            {
+                throw new NotImplementedException("this class dosnt provide methods");
+            }
+            set
+            {
+                throw new NotImplementedException("this class dosnt provide methods");
+            }
+        }
+        public virtual IEnumerator GetEnumerator()
+        {
+            throw new NotImplementedException("this class dosnt provide methods");
+        }
     }
-    class JSONDictionary : JSONTypes
+    public class JSONDictionary  : JSONTypes, IEnumerable
     {
         public override JSON.Types Type { get { return JSON.Types.DICT; } }
         private Dictionary<string, JSONTypes> data = new Dictionary<string, JSONTypes> { };
@@ -541,7 +556,7 @@ namespace RJJSON
             }
             set
             {
-                throw new Exception("Data cannot be assigned to-- it is read only");
+                throw new InvalidOperationException("Data cannot be assigned to-- it is read only");
             }
         }
         public override dynamic GetData<T>()
@@ -555,9 +570,49 @@ namespace RJJSON
                 return null;
             }
         }
-
+        public override JSONTypes this[object index]
+        {
+            get
+            {
+                if (index.GetType() != typeof(string))
+                {
+                    throw new InvalidTypeException("Error Indexer needs to be a string");
+                }
+                try
+                {
+                    return data[(string)index];
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
+            }
+            set
+            {
+                if (index.GetType() != typeof(string))
+                {
+                    throw new InvalidTypeException("Error Indexer needs to be a string");
+                }
+                try
+                {
+                    data[(string)index] = value;
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
+            }
+        }
+        public override IEnumerator GetEnumerator()
+        {
+            foreach (KeyValuePair<string, JSONTypes> entry in data)
+            {
+                yield return entry;
+            }
+            yield break;
+        }
     }
-    class JSONList : JSONTypes
+    public class JSONList : JSONTypes, IEnumerable
     {
         public override JSON.Types Type { get { return JSON.Types.LIST; } }
         private List<JSONTypes> data = new List<JSONTypes> { };
@@ -569,7 +624,7 @@ namespace RJJSON
             }
             set
             {
-                throw new Exception("Data cannot be assigned to-- it is read only");
+                throw new InvalidOperationException("Data cannot be assigned to-- it is read only");
             }
         }
         public override dynamic GetData<T>()
@@ -583,8 +638,49 @@ namespace RJJSON
                 return null;
             }
         }
+
+        public override IEnumerator GetEnumerator()
+        {
+            foreach (JSONTypes entry in data)
+            {
+                yield return entry;
+            }
+            yield break;
+        }
+
+        public override JSONTypes this[object index]
+        {
+            get{
+                if (index.GetType() != typeof(int))
+                {
+                    throw new InvalidTypeException("Error Indexer needs to be a string");
+                }
+                try
+                {
+                    return data[(int)index];
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
+            }
+            set{
+                if (index.GetType() != typeof(int))
+                {
+                    throw new InvalidTypeException("Error Indexer needs to be a string");
+                }
+                try
+                {
+                    data[(int)index] = value;
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
+            }
+        }
     }
-    class JSONString : JSONTypes
+    public class JSONString : JSONTypes
     {
         public JSONString(string json)
         {
@@ -619,7 +715,7 @@ namespace RJJSON
             data = NewData;
         }
     }
-    class JSONBool : JSONTypes
+    public class JSONBool : JSONTypes
     {
         public JSONBool(bool json)
         {
@@ -654,7 +750,7 @@ namespace RJJSON
             data = NewData;
         }
     }
-    class JSONFloat : JSONTypes
+    public class JSONFloat : JSONTypes
     {
         public JSONFloat(double json)
         {
@@ -688,5 +784,15 @@ namespace RJJSON
         {
             data = NewData;
         }
+    }
+    [System.Serializable]
+    public class InvalidTypeException : Exception
+    {
+        public InvalidTypeException() { }
+        public InvalidTypeException(string message) : base(message) { }
+        public InvalidTypeException(string message, Exception inner) : base(message, inner) { }
+        protected InvalidTypeException(
+          System.Runtime.Serialization.SerializationInfo info,
+          System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
     }
 }

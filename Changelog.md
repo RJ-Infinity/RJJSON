@@ -1,5 +1,14 @@
 # RJJSON
 this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_Infinity
+## JSONParse-0.4 Aug 2021
+### Additions
+- added the indexer wrappers
+- added the enumerator wrappers
+### Fixes
+- made all classes and relavent functions public so they are usefull from external libarys
+### Improvments
+- small optimisations
+- better Exception classes
 ## JSONParse-0.3 Apr 2021
 ### Additions
 - `FormatJson` function accepts a `string` or `JSONTypes` and formats it
