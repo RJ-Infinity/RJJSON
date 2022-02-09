@@ -1,5 +1,8 @@
 # RJJSON
 this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_Infinity
+## JSONParse-0.2 Feb 2021
+### Improvments
+- empty dictionarys and list are better parsed 
 ## JSONParse-0.1 Jan 2021
 ### Additions
 everything this is the first version but as you ask (if you do) here they are
