@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 /// <summary>
-/// <version>0.2</version>
+/// <version>0.3</version>
 /// Adds A new Type <c>JSONTypes</c> and its dirivitives
 /// <list type="bullet">
 ///     <item>
@@ -94,7 +94,7 @@ namespace RJJSON
                 case "\""://string
                     if (Json.Substring(Json.Length - 1, 1) == "\"")
                     {
-                        return new JSONString(Json.Substring(1, Json.Length - 2));//it will just be a string
+                        return new JSONString(RemoveEscChars(Json.Substring(1, Json.Length - 2)));//it will just be a string
                     }
                     else//it is incorectly formated
                     {
@@ -172,6 +172,54 @@ namespace RJJSON
                 }
             }
             return new KeyValuePair<string, JSONTypes>(Key, StringToObject(Value));
+        }
+        private static string RemoveEscChars(string str)
+        {
+            bool InEsc = false;
+            string newStr = "";
+            for (int ichar = 0; ichar < str.Length; ichar++)
+            {
+                if (str.Substring(ichar, 1) == "\\" && !InEsc)
+                {
+                    InEsc = true;
+                }
+                else if (InEsc)
+                {
+                    InEsc = false;
+                    switch (str.Substring(ichar, 1))
+                    {
+                        case "b":
+                            newStr += "\b";
+                            break;
+                        case "f":
+                            newStr += "\f";
+                            break;
+                        case "n":
+                            newStr += "\n";
+                            break;
+                        case "r":
+                            newStr += "\r";
+                            break;
+                        case "t":
+                            newStr += "\t";
+                            break;
+                        case "\"":
+                            newStr += "\"";
+                            break;
+                        case "\\":
+                            newStr += "\\";
+                            break;
+                        default:
+                            newStr += "\\" + str.Substring(ichar, 1);
+                            break;
+                    }
+                }
+                else
+                {
+                    newStr += str.Substring(ichar, 1);
+                }
+            }
+            return newStr;
         }
         private static List<string> SplitToJsonObj(string Json)
         {
@@ -264,7 +312,7 @@ namespace RJJSON
             }
             else if (Json.Type == JSON.Types.STRING)
             {
-                returnv = "\"" + Json.Data.Replace("\"", "\\\"") + "\"";
+                returnv = "\"" + Json.Data.Replace("\"", "\\\"").Replace("\\", "\\\\").Replace("\n", "\\n").Replace("\b", "\\b").Replace("\f", "\\f").Replace("\r", "\\r") + "\"";
             }
             else if (Json.Type == JSON.Types.FLOAT)
             {
@@ -275,6 +323,148 @@ namespace RJJSON
                 throw new Exception("Unknown Data Type\"" + Json.Type + "\"");
             }
             return returnv;
+        }
+        public static string FormatJson(string JSONStr)
+        {
+            char[] numbers = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+            List<char> closes = new List<char>();
+            int tabs = 0;
+            string FormatedJSONStr = "";
+            bool inString = false;
+            bool esc = false;
+            bool isnum = false;
+            for (int ichar = 0; ichar < JSONStr.Length; ichar++)
+            {
+                if (esc){
+                    esc = false;
+                    switch (JSONStr[ichar])
+                    {
+                        case 'b':
+                            FormatedJSONStr += "\\b";
+                        break;
+                        case 'f':
+                            FormatedJSONStr += "\\f";
+                        break;
+                        case 'n':
+                            FormatedJSONStr += "\\n";
+                        break;
+                        case 'r':
+                            FormatedJSONStr += "\\r";
+                        break;
+                        case 't':
+                            FormatedJSONStr += "\\t";
+                        break;
+                        case '"':
+                            FormatedJSONStr += "\\\"";
+                        break;
+                        case '\\':
+                            FormatedJSONStr += "\\\\";
+                        break;
+                        default:
+                            throw new Exception("error Invalid Data To Be Formated");
+                        break;
+                    }
+                }
+                else if (JSONStr[ichar] == '\\') {
+                    esc = true;
+                }
+                else if (JSONStr[ichar] == '"' && !esc){
+                    inString = !inString;
+                    FormatedJSONStr += "\"";
+                    if (!inString)
+                    {
+                        try
+                        {
+                            if(!((JSONStr[ichar+1] == ',') || (JSONStr[ichar + 1] == ':')))
+                            {
+                                FormatedJSONStr += "\n";
+                                for (int i = 0; i < tabs; i++)
+                                {
+                                    FormatedJSONStr += "\t";
+                                }
+                            }
+                        }
+                        catch (ArgumentOutOfRangeException){}
+                    }
+                }
+
+                else if ((JSONStr[ichar] == '[' || JSONStr[ichar] == '{') && !inString)
+                {
+                    closes.Add( (JSONStr[ichar]=='[') ? ']' : '}');
+                    FormatedJSONStr += JSONStr[ichar]+"\n";
+                    tabs++;
+                    for (int i = 0; i < tabs; i++)
+                    {
+                        FormatedJSONStr += "\t";
+                    }
+                }
+                else if(JSONStr[ichar] == ',' && !inString)
+                {
+                    FormatedJSONStr += ",\n";
+                    for (int i = 0; i < tabs; i++)
+                    {
+                        FormatedJSONStr += "\t";
+                    }
+                }
+                else
+                {
+                    foreach (char num in numbers)
+                    {
+                        if (JSONStr[ichar] == num){
+                            try
+                            {
+                                if (JSONStr[ichar+1] == '}' || JSONStr[ichar + 1] == ']')
+                                {
+                                    isnum = true;
+                                    FormatedJSONStr += JSONStr[ichar]+"\n";
+                                    for (int i = 0; i < tabs; i++)
+                                    {
+                                        FormatedJSONStr += "\t";
+                                    }
+                                }
+                            }
+                            catch (ArgumentOutOfRangeException)
+                            {}
+                            break;
+                        }
+                    }
+                    if (!isnum)
+                    {
+                        try
+                        {
+                            if (JSONStr[ichar] == closes[closes.Count - 1] && !inString)
+                            {
+                                if (FormatedJSONStr[FormatedJSONStr.Length -1] == '}' || FormatedJSONStr[FormatedJSONStr.Length - 1] == ']')
+                                {
+                                    FormatedJSONStr += "\n";
+                                }
+                                if (FormatedJSONStr[FormatedJSONStr.Length-1] == '\t')
+                                {
+                                    FormatedJSONStr = FormatedJSONStr.Substring(0, FormatedJSONStr.Length - 1);
+                                }
+                                FormatedJSONStr += JSONStr[ichar];
+                                tabs--;
+                                closes.RemoveAt(closes.Count - 1);
+                            }
+                            else
+                            {
+                                FormatedJSONStr += JSONStr[ichar];
+                            }
+                        }
+                        catch (ArgumentOutOfRangeException){
+                            FormatedJSONStr += JSONStr[ichar];
+                        }
+                    }
+                    else
+                    {
+                        isnum = false;
+                    }
+                }
+            }
+            return FormatedJSONStr;
+        }
+        public static string FormatJson(JSONTypes JSONStr){
+            return FormatJson(JSONStr.ToString());
         }
         /// <summary>
         /// All The Types JSON supports

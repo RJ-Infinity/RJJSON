@@ -1,5 +1,10 @@
 # RJJSON
 this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_Infinity
+## JSONParse-0.3 Apr 2021
+### Additions
+- `FormatJson` function accepts a `string` or `JSONTypes` and formats it
+### Fixes
+- Fixed string escaping
 ## JSONParse-0.2 Feb 2021
 ### Improvments
 - empty dictionarys and list are better parsed 
