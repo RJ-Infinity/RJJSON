@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 /// <summary>
-/// <version>0.1</version>
+/// <version>0.2</version>
 /// Adds A new Type <c>JSONTypes</c> and its dirivitives
 /// <list type="bullet">
 ///     <item>
@@ -100,19 +100,17 @@ namespace RJJSON
                     {
                         throw new FormatException("The JSON string is incorectly formated");
                     }
-                    break;
+                break;
                 case "{":
-                    if (Json == "{}")
-                    {
-                        return new JSONDictionary();
-                    }
                     if (Json.Substring(Json.Length - 1, 1) == "}")
                     {
                         JSONDictionary returnv = new JSONDictionary();
-                        foreach (string str in SplitToJsonObj(Json.Substring(1, Json.Length - 2)))
-                        {
-                            KeyValuePair<string,JSONTypes> KeyValue = GetKeyValuePair(str);
-                            returnv.Data.Add(KeyValue.Key, KeyValue.Value);
+                        if (Json.Substring(1, Json.Length - 2).Length > 0){
+                            foreach (string str in SplitToJsonObj(Json.Substring(1, Json.Length - 2)))
+                            {
+                                KeyValuePair<string,JSONTypes> KeyValue = GetKeyValuePair(str);
+                                returnv.Data.Add(KeyValue.Key, KeyValue.Value);
+                            }
                         }
                         return returnv;
                     }
@@ -120,18 +118,17 @@ namespace RJJSON
                     {
                         throw new FormatException("The JSON string is incorectly formated");
                     }
-                    break;
+                break;
                 case "[":
-                    if (Json == "[]")
-                    {
-                        return new JSONList();
-                    }
                     if (Json.Substring(Json.Length - 1, 1) == "]")
                     {
                         JSONList returnv = new JSONList();
-                        foreach (string str in SplitToJsonObj(Json.Substring(1, Json.Length - 2)))
+                        if (Json.Substring(1, Json.Length - 2).Length > 0)
                         {
-                            returnv.Data.Add(StringToObject(str));
+                            foreach (string str in SplitToJsonObj(Json.Substring(1, Json.Length - 2)))
+                            {
+                                returnv.Data.Add(StringToObject(str));
+                            }
                         }
                         return returnv;
                     }
@@ -139,7 +136,7 @@ namespace RJJSON
                     {
                         throw new FormatException("The JSON string is incorectly formated");
                     }
-                    break;
+                break;
             }
             return new JSONString("");//just so the compiler dosnt shout at me (this should probs be an exception)
         }
@@ -206,9 +203,9 @@ namespace RJJSON
                 if (Json.Substring(ichar, 1) == "[") { close.Add(']'); }
                 if (close.Count > 0)
                 {
-                    if (Json.Substring(ichar, 1) == close[0].ToString())
+                    if (Json.Substring(ichar, 1) == close[close.Count - 1].ToString())
                     {
-                        close.RemoveAt(0);
+                        close.RemoveAt(close.Count - 1);
                     }
                 }
                 if (InEsc) { InEsc = false; }
@@ -279,6 +276,10 @@ namespace RJJSON
             }
             return returnv;
         }
+        /// <summary>
+        /// All The Types JSON supports
+        /// (it may appear that JSON supports Int as it has this option
+        /// </summary>
         public enum Types
         {
             NULL,
