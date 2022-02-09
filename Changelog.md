@@ -1,5 +1,38 @@
 # RJJSON
 this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_Infinity
+## JSONParse-0.5 Feb 2022
+### Additions
+- added `FillDefault` function which fills a JSON dict with defalut values 
+### Fixes
+- added missing comment doc for `FormatJson`
+### Improvements
+- The `GetData` method has been removed (partialy due to the restructure)
+- **SIGNIFICANT CHANGE** the classes that inhereted from `JsonTypes` have beed removed and the `JsonTypes` class has been renamed to `JSONType`. `JsonType` has now not got a `Data` field and instead has
+    + `DictData`
+    + `ListData`
+    + `BoolData`
+    + `StringData`
+    + `FloatData`
+
+these all throw a `InvalidTypeException` if the `Type` of the class dosent match the c# parralell type if they match then it returns the data that the instance holds once initialised the `Type` field cannot me changed this was done to improve typping as there is a strict type now and no `dynamic`s or `object` casting the retrivial of data should now be handled like so
+```c#
+public void functionName(JsonType json){
+    if (json.Type == Json.Types.DICT){
+        Dictionary<string, JsonType> rootData = json.DictData;
+    }else{
+        // throw an error or handle another case
+    }
+    // or for getting a key
+    if(
+        json.Type == Json.Types.DICT && //check the root is a dict
+        json.DictData.ContainsKey("A Json Key") && //check it contains the key
+        json["A Json Key"].Type == Json.Types.STRING //check the key has the correct type
+    ){
+        string theKey = json["A Json Key"].StringData; //extract the data
+    }
+}
+```
+or a functionaly simalar method using asserts ect.
 ## JSONParse-0.4 Aug 2021
 ### Additions
 - added the indexer wrappers

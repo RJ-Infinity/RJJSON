@@ -6,30 +6,8 @@ using System.Text;
 using System.Threading.Tasks;
 
 /// <summary>
-/// <version>0.4</version>
-/// Adds A new Type <c>JSONTypes</c> and its dirivitives
-/// <list type="bullet">
-///     <item>
-///         <term><c>JSONDictionary</c></term>
-///         <description>A wrapper for a Dictionary with the format of JS</description>
-///     </item>
-///     <item>
-///         <term><c>JSONList</c></term>
-///         <description>A wrapper for a List with the format of JS</description>
-///     </item>
-///     <item>
-///         <term><c>JSONBool</c></term>
-///         <description>A wrapper for a bool</description>
-///     </item>
-///     <item>
-///         <term><c>JSONString</c></term>
-///         <description> A wrapper for a string <!--with the format of JS--></description>
-///     </item>
-///     <item>
-///         <term><c>JSONFloat</c></term>
-///         <description>A wrapper for a doublewhich is the presision JSON uses</description>
-///     </item>
-/// </list>
+/// <version>0.5</version>
+/// Adds A new Type <c>JSONType</c> which is a wrapper for the c# representations of json types
 /// Also Adds JSON class which is "A mostly static class which helps yopu minippulate <c>JSONTypes</c>"
 /// 
 /// © RJ_Infinity 2021
@@ -46,7 +24,7 @@ namespace RJJSON
         /// </summary>
         /// <param name="Json">A string representation of JSON</param>
         /// <returns>A JSONTypes object with the same structure and values as the string representation</returns>
-        public static JSONTypes StringToObject(string Json)
+        public static JSONType StringToObject(string Json)
         {
             Json = Json.Replace("\r\n", "\n").Replace("\n", "");//remove all types of line ending
             bool InString = false;
@@ -79,23 +57,31 @@ namespace RJJSON
             }
             if (Json == "true")
             {
-                return new JSONBool(true);
+                JSONType rv = new JSONType(Types.BOOL);
+                rv.BoolData = true;
+                return rv;
             }
             if (Json == "false")
             {
-                return new JSONBool(false);
+                JSONType rv = new JSONType(Types.BOOL);
+                rv.BoolData = false;
+                return rv;
             }
             double JsonAsDBL = 0;
             if (double.TryParse(Json, out JsonAsDBL))
             {
-                return new JSONFloat(JsonAsDBL);
+                JSONType rv = new JSONType(Types.FLOAT);
+                rv.FloatData = JsonAsDBL;
+                return rv;
             }
             switch (Json.Substring(0, 1))//get type of fist thing
             {
                 case "\""://string
                     if (Json.Substring(Json.Length - 1, 1) == "\"")
                     {
-                        return new JSONString(RemoveEscChars(Json.Substring(1, Json.Length - 2)));//it will just be a string
+                        JSONType rv = new JSONType(Types.STRING);
+                        rv.StringData = RemoveEscChars(Json.Substring(1, Json.Length - 2));//remove the quotes
+                        return rv;
                     }
                     else//it is incorectly formated
                     {
@@ -105,12 +91,12 @@ namespace RJJSON
                 case "{":
                     if (Json.Substring(Json.Length - 1, 1) == "}")
                     {
-                        JSONDictionary returnv = new JSONDictionary();
+                        JSONType returnv = new JSONType(Types.DICT);
                         if (Json.Substring(1, Json.Length - 2).Length > 0){
                             foreach (string str in SplitToJsonObj(Json.Substring(1, Json.Length - 2)))
                             {
-                                KeyValuePair<string,JSONTypes> KeyValue = GetKeyValuePair(str);
-                                returnv.Data.Add(KeyValue.Key, KeyValue.Value);
+                                KeyValuePair<string, JSONType> KeyValue = GetKeyValuePair(str);
+                                returnv.DictData.Add(KeyValue.Key, KeyValue.Value);
                             }
                         }
                         return returnv;
@@ -123,12 +109,12 @@ namespace RJJSON
                 case "[":
                     if (Json.Substring(Json.Length - 1, 1) == "]")
                     {
-                        JSONList returnv = new JSONList();
+                        JSONType returnv = new JSONType(Types.LIST);
                         if (Json.Substring(1, Json.Length - 2).Length > 0)
                         {
                             foreach (string str in SplitToJsonObj(Json.Substring(1, Json.Length - 2)))
                             {
-                                returnv.Data.Add(StringToObject(str));
+                                returnv.ListData.Add(StringToObject(str));
                             }
                         }
                         return returnv;
@@ -139,9 +125,9 @@ namespace RJJSON
                     }
                 //break;
             }
-            return new JSONString("");//just so the compiler dosnt shout at me (this should probs be an exception)
+            throw new Exception("Json is invalid");//just so the compiler dosnt shout at me (this should probs be an exception)
         }
-        private static KeyValuePair<string, JSONTypes> GetKeyValuePair(string Json)
+        private static KeyValuePair<string, JSONType> GetKeyValuePair(string Json)
         {
             string Key = "";
             string Value = "";
@@ -155,7 +141,7 @@ namespace RJJSON
                     {
                         Key = Json.Substring(1, ichar - 2);
                         Value = Json.Substring(ichar+1, Json.Length - ichar - 1);
-                        return new KeyValuePair<string, JSONTypes>(Key, StringToObject(Value));
+                        return new KeyValuePair<string, JSONType>(Key, StringToObject(Value));
                     }
                 }
                 if (!InEsc)//stops ending strings if the " was preceded with a \
@@ -172,7 +158,7 @@ namespace RJJSON
                     InEsc = true;
                 }
             }
-            return new KeyValuePair<string, JSONTypes>(Key, StringToObject(Value));
+            return new KeyValuePair<string, JSONType>(Key, StringToObject(Value));
         }
         private static string RemoveEscChars(string str)
         {
@@ -270,7 +256,7 @@ namespace RJJSON
         /// </summary>
         /// <param name="Json"></param>
         /// <returns>String Representation Of JSONTypes Object</returns>
-        public static string ObjectToString(JSONTypes Json)
+        public static string ObjectToString(JSONType Json)
         {
             string returnv = "";
             if (Json.Type == JSON.Types.NULL)
@@ -281,7 +267,7 @@ namespace RJJSON
             {
                 returnv += "{";
                 bool firstloop = true;
-                foreach(KeyValuePair<string, JSONTypes> El in Json.Data)
+                foreach(KeyValuePair<string, JSONType> El in Json)
                 {
                     if (!firstloop)
                     {
@@ -296,7 +282,7 @@ namespace RJJSON
             {
                 returnv += "[";
                 bool firstloop = true;
-                foreach (JSONTypes El in Json.Data)
+                foreach (JSONType El in Json)
                 {
                     if (!firstloop)
                     {
@@ -309,15 +295,15 @@ namespace RJJSON
             }
             else if(Json.Type == JSON.Types.BOOL)
             {
-                returnv = Json.Data.ToString().ToLower();
+                returnv = Json.BoolData.ToString().ToLower();
             }
             else if (Json.Type == JSON.Types.STRING)
             {
-                returnv = "\"" + Json.Data.Replace("\"", "\\\"").Replace("\\", "\\\\").Replace("\n", "\\n").Replace("\b", "\\b").Replace("\f", "\\f").Replace("\r", "\\r") + "\"";
+                returnv = "\"" + Json.StringData.Replace("\"", "\\\"").Replace("\\", "\\\\").Replace("\n", "\\n").Replace("\b", "\\b").Replace("\f", "\\f").Replace("\r", "\\r") + "\"";
             }
             else if (Json.Type == JSON.Types.FLOAT)
             {
-                returnv = ((decimal)Json.Data).ToString();
+                returnv = ((decimal)Json.FloatData).ToString();
             }
             else
             {
@@ -325,6 +311,11 @@ namespace RJJSON
             }
             return returnv;
         }
+        /// <summary>
+        /// formats a Json string
+        /// </summary>
+        /// <param name="JSONStr">the json to be formated</param>
+        /// <returns>a formated Json string</returns>
         public static string FormatJson(string JSONStr)
         {
             char[] numbers = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
@@ -464,22 +455,104 @@ namespace RJJSON
             }
             return FormatedJSONStr;
         }
-        public static string FormatJson(JSONTypes JSONStr){
+        /// <summary>
+        /// formats a Json string
+        /// </summary>
+        /// <param name="JSONStr">the json to be formated</param>
+        /// <returns>a formated Json string</returns>
+        public static string FormatJson(JSONType JSONStr){
             return FormatJson(JSONStr.ToString());
         }
+        /// <summary>
+        /// fills the missing values from a Json object with the default values provided
+        /// </summary>
+        /// <param name="Default">your default values</param>
+        /// <param name="Custom">the incomplete values</param>
+        /// <returns></returns>
+        public static JSONType FillDefault(JSONType Default, JSONType Custom)
+        {
+            switch (Default.Type)
+            {
+                case Types.NULL:
+                case Types.BOOL:
+                case Types.STRING:
+                case Types.FLOAT:
+                case Types.LIST:
+                {
+                    if (Custom.Type == Types.NULL)
+                    {
+                        return Default;
+                    }
+                    return Custom;
+                }
+                case Types.DICT: return ReplaceDict(Default, Custom);
+            }
+            throw new Exception("This Should Be An Imposible State");
+        }
+        private static JSONType ReplaceDict(JSONType Default, JSONType Custom)
+        {
+            if (Default.Type != Types.DICT || Custom.Type != Types.DICT)
+            {
+                throw new InvalidTypeException("the passed type wasnt a JSON dictionary");
+            }
+            JSONType NewJson = new JSONType(Types.DICT);
+            foreach (KeyValuePair<string, JSONType> i in Default)
+            {
+                if (Custom.DictData.ContainsKey(i.Key))
+                {
+                    if (Custom[i.Key].Type == Types.DICT && i.Value.Type == Types.DICT)
+                    {
+                        NewJson[i.Key] = ReplaceDict(Custom[i.Key], i.Value);
+                    }
+                    else
+                    {
+                        NewJson[i.Key] = Custom[i.Key];
+                    }
+                }
+                else
+                {
+                    NewJson[i.Key] = i.Value;
+                }
+            }
+            return NewJson;
+        }
+
         /// <summary>
         /// All The Types JSON supports
         /// (it may appear that JSON supports Int as it has this option
         /// </summary>
         public enum Types
         {
+            /// <summary>
+            /// represents <c>null</c>
+            /// </summary>
             NULL,
+            /// <summary>
+            /// represents <c>Dictionary&lt;string, JSONTypes&gt;</c>
+            /// </summary>
             DICT,
+            /// <summary>
+            /// represents <c>List&lt;JSONTypes&gt;</c>
+            /// </summary>
             LIST,
+            /// <summary>
+            /// represents <c>bool</c>
+            /// </summary>
             BOOL,
+            /// <summary>
+            /// represents <c>string</c>
+            /// </summary>
             STRING,
+            /// <summary>
+            /// represents <c>double</c>
+            /// </summary>
             FLOAT
         }
+        /// <summary>
+        /// converts <c>JSON.Types</c> to <c>Type</c>
+        /// </summary>
+        /// <param name="type">the type to convert to a <c>Type</c></param>
+        /// <returns>the <c>Type</c> equivelent of <c>Json.Types</c> value passed in</returns>
         public static Type JSONTypesToTypes(JSON.Types type)
         {
             switch (type)
@@ -487,9 +560,9 @@ namespace RJJSON
                 case JSON.Types.NULL:
                     return null;
                 case JSON.Types.DICT:
-                    return typeof(Dictionary<string, JSONTypes>);
+                    return typeof(Dictionary<string, JSONType>);
                 case JSON.Types.LIST:
-                    return typeof(List<JSONTypes>);
+                    return typeof(List<JSONType>);
                 case JSON.Types.BOOL:
                     return typeof(bool);
                 case JSON.Types.STRING:
@@ -502,25 +575,124 @@ namespace RJJSON
 
     }
     /// <summary>
-    /// Class <c>JSONTypes</c> base type for all JSON types.
+    /// Class <c>JSONTypes</c> wrapper for all JSON types.
     /// </summary>
-    public abstract class JSONTypes//all types must inhehrit of one class so that they can go togeter in a list or dict
+    public class JSONType
     {
         /// <summary>
+        /// constructor <c>JSONType</c>
+        /// <param name="type">the type the <c>JSONType</c> instance wraps</param>
+        /// </summary>
+        public JSONType(JSON.Types type)
+        {
+            Type = type;
+        }
+        /// <summary>
         /// field <c>Type</c>
-        /// <returns>The JSON type as a <code>JSON.Types</code> in the case of the parent <c>JSONTypes</c> returns <code>JSON.Types.NULL</code></returns>
+        /// <returns>The JSON type as a <code>JSON.Types</code></returns>
         /// </summary>
-        public abstract JSON.Types Type { get; }
+        public JSON.Types Type { get; }
         /// <summary>
-        /// field <c>Data</c> Get or Set the acctual data the instance holds
+        /// field <c>DictData</c> Get the Data that the instance holds if it has a type of <code>JSON.Types.DICT</code>
         /// </summary>
-        public abstract dynamic Data { get; set; }
+        public Dictionary<string, JSONType> DictData {
+            get
+            {
+                if (Type == JSON.Types.DICT)
+                {
+                    return dictData;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not "+JSON.Types.DICT);
+            }
+        }
+        private Dictionary<string, JSONType> dictData = new Dictionary<string, JSONType> { };
         /// <summary>
-        /// method <c>GetData</c> alaias for <code>this.Data{get}</code>
+        /// field <c>ListData</c> Get the Data that the instance holds if it has a type of <code>JSON.Types.LIST</code>
         /// </summary>
-        /// <typeparam name="T">The return type. Should be the representation of <code>this.Type</code></typeparam>
-        /// <returns>The acctual data the instancve holds</returns>
-        public abstract dynamic GetData<T>();
+        public List<JSONType> ListData
+        {
+            get
+            {
+                if (Type == JSON.Types.LIST)
+                {
+                    return listData;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.LIST);
+            }
+        }
+        private List<JSONType> listData = new List<JSONType> { };
+        /// <summary>
+        /// field <c>BoolData</c> Get the Data that the instance holds if it has a type of <code>JSON.Types.BOOL</code>
+        /// </summary>
+        public bool BoolData
+        {
+            get
+            {
+                if (Type == JSON.Types.BOOL)
+                {
+                    return boolData;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.BOOL);
+            }
+            set
+            {
+                if (Type == JSON.Types.BOOL)
+                {
+                    boolData = value;
+                    return;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.BOOL);
+            }
+        }
+        private bool boolData;
+        /// <summary>
+        /// field <c>StringData</c> Get the Data that the instance holds if it has a type of <code>JSON.Types.STRING</code>
+        /// </summary>
+        public string StringData
+        {
+            get
+            {
+                if (Type == JSON.Types.STRING)
+                {
+                    return stringData;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.STRING);
+            }
+            set
+            {
+                if (Type == JSON.Types.STRING)
+                {
+                    stringData = value;
+                    return;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.STRING);
+            }
+        }
+        private string stringData;
+        /// <summary>
+        /// field <c>FloatData</c> Get the Data that the instance holds if it has a type of <code>JSON.Types.FLOAT</code>
+        /// </summary>
+        public double FloatData
+        {
+            get
+            {
+                if (Type == JSON.Types.FLOAT)
+                {
+                    return floatData;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.FLOAT);
+            }
+            set
+            {
+                if (Type == JSON.Types.FLOAT)
+                {
+                    floatData = value;
+                    return;
+                }
+                throw new InvalidTypeException("The Type is " + Type + " not " + JSON.Types.FLOAT);
+            }
+        }
+        private double floatData;
         /// <summary>
         /// method <c>ToString</c> alias for <code>JSON.ObjectToString(this)</code> or in other words the <code>JSON.ObjectToString</code> of itsself
         /// </summary>
@@ -529,268 +701,113 @@ namespace RJJSON
         {
             return JSON.ObjectToString(this);
         }
-        public virtual JSONTypes this[object index] {
+        /// <summary>
+        /// Indexer Root Only works if <c>type</c> is <code>JSON.Types.DICT</code>
+        /// </summary>
+        /// <param name="index">the value to index to</param>
+        /// <returns></returns>
+        public virtual JSONType this[int index] {
             get
             {
-                throw new NotImplementedException("this class dosnt provide methods");
+                try
+                {
+                    return listData[index];
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
             }
             set
             {
-                throw new NotImplementedException("this class dosnt provide methods");
+                try
+                {
+                    listData[index] = value;
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
             }
         }
+        /// <summary>
+        /// Indexer Root Only works if <c>type</c> is <code>JSON.Types.LIST</code>
+        /// </summary>
+        /// <param name="index">the value to index to</param>
+        /// <returns></returns>
+        public virtual JSONType this[string index] {
+            get
+            {
+                try
+                {
+                    return dictData[index];
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
+            }
+            set
+            {
+                try
+                {
+                    dictData[index] = value;
+                }
+                catch (KeyNotFoundException)
+                {
+                    throw;
+                }
+            }
+        }
+        /// <summary>
+        /// GetEnumerator Root. Only works if <c>type</c> is <code>JSON.Types.DICT</code> and <code>JSON.Types.LIST</code>
+        /// </summary>
+        /// <returns>IEnumerator object</returns>
         public virtual IEnumerator GetEnumerator()
         {
-            throw new NotImplementedException("this class dosnt provide methods");
-        }
-    }
-    public class JSONDictionary  : JSONTypes, IEnumerable
-    {
-        public override JSON.Types Type { get { return JSON.Types.DICT; } }
-        private Dictionary<string, JSONTypes> data = new Dictionary<string, JSONTypes> { };
-        public override dynamic Data
-        {
-            get
+            if (Type == JSON.Types.DICT)
             {
-                return data;
+                foreach (KeyValuePair<string, JSONType> entry in dictData)
+                {
+                    yield return entry;
+                }
+                yield break;
             }
-            set
+            else if (Type == JSON.Types.LIST)
             {
-                throw new InvalidOperationException("Data cannot be assigned to-- it is read only");
-            }
-        }
-        public override dynamic GetData<T>()
-        {
-            if (typeof(T) == typeof(Dictionary<string, JSONTypes>))
-            {
-                return data;
+                foreach (JSONType entry in listData)
+                {
+                    yield return entry;
+                }
+                yield break;
             }
             else
             {
-                return null;
-            }
-        }
-        public override JSONTypes this[object index]
-        {
-            get
-            {
-                if (index.GetType() != typeof(string))
-                {
-                    throw new InvalidTypeException("Error Indexer needs to be a string");
-                }
-                try
-                {
-                    return data[(string)index];
-                }
-                catch (KeyNotFoundException)
-                {
-                    throw;
-                }
-            }
-            set
-            {
-                if (index.GetType() != typeof(string))
-                {
-                    throw new InvalidTypeException("Error Indexer needs to be a string");
-                }
-                try
-                {
-                    data[(string)index] = value;
-                }
-                catch (KeyNotFoundException)
-                {
-                    throw;
-                }
-            }
-        }
-        public override IEnumerator GetEnumerator()
-        {
-            foreach (KeyValuePair<string, JSONTypes> entry in data)
-            {
-                yield return entry;
-            }
-            yield break;
-        }
-    }
-    public class JSONList : JSONTypes, IEnumerable
-    {
-        public override JSON.Types Type { get { return JSON.Types.LIST; } }
-        private List<JSONTypes> data = new List<JSONTypes> { };
-        public override dynamic Data
-        {
-            get
-            {
-                return data;
-            }
-            set
-            {
-                throw new InvalidOperationException("Data cannot be assigned to-- it is read only");
-            }
-        }
-        public override dynamic GetData<T>()
-        {
-            if (typeof(T) == typeof(List<JSONTypes>))
-            {
-                return data;
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        public override IEnumerator GetEnumerator()
-        {
-            foreach (JSONTypes entry in data)
-            {
-                yield return entry;
-            }
-            yield break;
-        }
-
-        public override JSONTypes this[object index]
-        {
-            get{
-                if (index.GetType() != typeof(int))
-                {
-                    throw new InvalidTypeException("Error Indexer needs to be a string");
-                }
-                try
-                {
-                    return data[(int)index];
-                }
-                catch (KeyNotFoundException)
-                {
-                    throw;
-                }
-            }
-            set{
-                if (index.GetType() != typeof(int))
-                {
-                    throw new InvalidTypeException("Error Indexer needs to be a string");
-                }
-                try
-                {
-                    data[(int)index] = value;
-                }
-                catch (KeyNotFoundException)
-                {
-                    throw;
-                }
+                throw new InvalidTypeException("the type isnt a JSON dict or JSON list");
             }
         }
     }
-    public class JSONString : JSONTypes
-    {
-        public JSONString(string json)
-        {
-            data = json;
-        }
-        public override JSON.Types Type { get { return JSON.Types.STRING; } }
-        private string data;
-        public override dynamic Data
-        {
-            get
-            {
-                return data;
-            }
-            set
-            {
-                data = value;
-            }
-        }
-        public override dynamic GetData<T>()
-        {
-            if (typeof(T) == typeof(string))
-            {
-                return data;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        public void SetData(string NewData)
-        {
-            data = NewData;
-        }
-    }
-    public class JSONBool : JSONTypes
-    {
-        public JSONBool(bool json)
-        {
-            data = json;
-        }
-        public override JSON.Types Type { get { return JSON.Types.BOOL; } }
-        private bool data;
-        public override dynamic Data
-        {
-            get
-            {
-                return data;
-            }
-            set
-            {
-                data = value;
-            }
-        }
-        public override dynamic GetData<T>()
-        {
-            if (typeof(T) == typeof(bool))
-            {
-                return data;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        public void SetData(bool NewData)
-        {
-            data = NewData;
-        }
-    }
-    public class JSONFloat : JSONTypes
-    {
-        public JSONFloat(double json)
-        {
-            data = json;
-        }
-        public override JSON.Types Type { get { return JSON.Types.FLOAT; } }
-        public double data;
-        public override dynamic Data
-        {
-            get
-            {
-                return data;
-            }
-            set
-            {
-                data = value;
-            }
-        }
-        public override dynamic GetData<T>()
-        {
-            if (typeof(T) == typeof(double))
-            {
-                return data;
-            }
-            else
-            {
-                return null;
-            }
-        }
-        public void SetData(double NewData)
-        {
-            data = NewData;
-        }
-    }
+    /// <summary>
+    /// thrown when there is an invalid type passed
+    /// </summary>
     [System.Serializable]
     public class InvalidTypeException : Exception
     {
+        /// <summary>
+        /// initiliser for <c>InvalidTypeException</c>
+        /// </summary>
         public InvalidTypeException() { }
+        /// <summary>
+        /// initiliser for <c>InvalidTypeException</c>
+        /// </summary>
         public InvalidTypeException(string message) : base(message) { }
+        /// <summary>
+        /// initiliser for <c>InvalidTypeException</c>
+        /// </summary>
         public InvalidTypeException(string message, Exception inner) : base(message, inner) { }
+        /// <summary>
+        /// initiliser for <c>InvalidTypeException</c>
+        /// </summary>
         protected InvalidTypeException(
           System.Runtime.Serialization.SerializationInfo info,
           System.Runtime.Serialization.StreamingContext context) : base(info, context) { }
