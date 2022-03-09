@@ -7,7 +7,7 @@ this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_
 - added missing comment doc for `FormatJson`
 ### Improvements
 - The `GetData` method has been removed (partialy due to the restructure)
-- **SIGNIFICANT CHANGE** the classes that inhereted from `JsonTypes` have beed removed and the `JsonTypes` class has been renamed to `JSONType`. `JsonType` has now not got a `Data` field and instead has
+- **SIGNIFICANT CHANGE** the classes that inhereted from `JsonTypes` have been removed and the `JsonTypes` class has been renamed to `JSONType`. `JsonType` has now not got a `Data` field and instead has
     + `DictData`
     + `ListData`
     + `BoolData`
