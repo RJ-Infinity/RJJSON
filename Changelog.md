@@ -14,7 +14,7 @@ this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_
     + `StringData`
     + `FloatData`
 
-these all throw a `InvalidTypeException` if the `Type` of the class dosent match the c# parralell type if they match then it returns the data that the instance holds once initialised the `Type` field cannot me changed this was done to improve typping as there is a strict type now and no `dynamic`s or `object` casting the retrivial of data should now be handled like so
+these all throw a `InvalidTypeException` if the `Type` of the class dosent match the c# parralell type if they match then it returns the data that the instance holds once initialised the `Type` field cannot be changed this was done to improve typing as there is a stricter type now and no `dynamic`s or `object` casting the retrivial of data should now be handled like so
 ```c#
 public void functionName(JsonType json){
     if (json.Type == Json.Types.DICT){
