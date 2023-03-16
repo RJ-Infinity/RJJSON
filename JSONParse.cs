@@ -67,8 +67,8 @@ namespace RJJSON
                 rv.BoolData = false;
                 return rv;
             }
-            double JsonAsDBL = 0;
-            if (double.TryParse(Json, out JsonAsDBL))
+            //if (double.TryParse(Json, out double JsonAsDBL))
+            if (JsonParseNumber(Json, out double JsonAsDBL))
             {
                 JSONType rv = new JSONType(Types.FLOAT);
                 rv.FloatData = JsonAsDBL;
@@ -126,6 +126,67 @@ namespace RJJSON
                 //break;
             }
             throw new Exception("Json is invalid");//just so the compiler dosnt shout at me (this should probs be an exception)
+        }
+        public static bool TestJsonParseNumber(string Json, out double result)
+        {
+            return JsonParseNumber(Json, out result);
+        }
+        private static char[] digits = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+        private static string ConsumeDigits(ref string Json)
+        {
+            string rv = "";
+            while (digits.Contains(Json[0]))
+            {
+                rv += Json[0];
+                Json = Json.Substring(1);
+            }
+            return rv;
+        }
+        private static bool JsonParseNumber(string Json, out double result)
+        {
+            if (!double.TryParse(Json, out double JsonAsDBL))
+            {
+                result = 0;
+                return false;
+            }
+            result = JsonAsDBL;
+
+            if (Json[0] == '-')
+            { Json = Json.Substring(1); }
+
+            if (Json.Length == 0 || !digits.Contains(Json[0]))
+            {
+                result = 0;
+                return false;
+            }
+            if (Json[0] != '0')
+            { ConsumeDigits(ref Json); }
+            else
+            { Json = Json.Substring(1); }
+            if (Json.Length == 0) { return true; }
+
+            if (Json.Length > 1 && Json[0] == '.' && digits.Contains(Json[1]))
+            {
+                Json = Json.Substring(1);
+                ConsumeDigits(ref Json);
+            }
+            if (Json.Length == 0) { return true; }
+
+            if (Json[0] == 'e' || Json[0] == 'E')
+            { Json = Json.Substring(1); }
+            else
+            {
+                result = 0;
+                return false;
+            }
+            if (Json.Length > 0 && (Json[0] == '-' || Json[0] == '+'))
+            { Json = Json.Substring(1); }
+            if (Json.Length > 0 && digits.Contains(Json[0]))
+            { ConsumeDigits(ref Json); }
+            if (Json.Length == 0) { return true; }
+
+            result = 0;
+            return false;
         }
         private static KeyValuePair<string, JSONType> GetKeyValuePair(string Json)
         {
@@ -709,6 +770,10 @@ namespace RJJSON
         public virtual JSONType this[int index] {
             get
             {
+                if (Type != JSON.Types.LIST)
+                {
+                    throw new InvalidTypeException("the type isnt a JSON list");
+                }
                 try
                 {
                     return listData[index];
@@ -720,6 +785,10 @@ namespace RJJSON
             }
             set
             {
+                if (Type != JSON.Types.LIST)
+                {
+                    throw new InvalidTypeException("the type isnt a JSON list");
+                }
                 try
                 {
                     listData[index] = value;
@@ -738,6 +807,10 @@ namespace RJJSON
         public virtual JSONType this[string index] {
             get
             {
+                if (Type != JSON.Types.DICT)
+                {
+                    throw new InvalidTypeException("the type isnt a JSON dict");
+                }
                 try
                 {
                     return dictData[index];
@@ -749,6 +822,10 @@ namespace RJJSON
             }
             set
             {
+                if (Type != JSON.Types.DICT)
+                {
+                    throw new InvalidTypeException("the type isnt a JSON dict");
+                }
                 try
                 {
                     dictData[index] = value;
