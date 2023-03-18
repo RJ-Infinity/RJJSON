@@ -1,5 +1,12 @@
 # RJJSON
 this is the changelog for RJJSON (JSONParse) a Json Parser for c# written by RJ_Infinity
+## JSONParse-0.6 Mar 2023
+### Additions
+ None
+### Fixes
+- fixed parsing of Numbers
+### Improvments
+- better type checking
 ## JSONParse-0.5 Feb 2022
 ### Additions
 - added `FillDefault` function which fills a JSON dict with defalut values 
