@@ -127,15 +127,11 @@ namespace RJJSON
             }
             throw new Exception("Json is invalid");//just so the compiler dosnt shout at me (this should probs be an exception)
         }
-        public static bool TestJsonParseNumber(string Json, out double result)
-        {
-            return JsonParseNumber(Json, out result);
-        }
         private static char[] digits = new char[] { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
         private static string ConsumeDigits(ref string Json)
         {
             string rv = "";
-            while (digits.Contains(Json[0]))
+            while (Json.Length > 0 && digits.Contains(Json[0]))
             {
                 rv += Json[0];
                 Json = Json.Substring(1);
