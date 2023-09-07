@@ -9,9 +9,9 @@ usage
 public void functionName(string FileName){
 	//should check that the file is a valid file path and exists
 	string jsonContent = System.IO.File.ReadAllText(FileName);
-	JsonType json = JSON.StringToObject(jsonContent);
+	JSONType json = JSON.StringToObject(jsonContent);
 	if(//here it is probably better to use asserts so that you can tell where the exception occured
-	// however for the purposes of this demonstration that isnt neccisary
+	// however for the purposes of this demonstration that isnt necessary
 		json.Type == Json.Types.DICT && //check the root is a dict
 		json.DictData.ContainsKey("A Json Key") && //check it contains the key
 		json["A Json Key"].Type == Json.Types.STRING //check the key has the correct type
